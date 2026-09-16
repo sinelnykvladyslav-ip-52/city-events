@@ -7,11 +7,72 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<!-- Шапка з назвою і навігацією -->
-<!-- Блок фільтра за датою/категорією -->
-<!-- Список подій (картки) -->
-<!-- Блок деталей обраної події -->
-<!-- Підвал -->
+<header>
+  <h1>АФІША ПОДІЙ МІСТА</h1>
+  <nav>
+    <a href="#events">ПОДІЇ</a>
+    <a href="#selected-event">ОБРАНА ПОДІЯ</a>
+  </nav>
+</header>
+
+<main>
+  <section id="filters">
+    <h2>ФІЛЬТР ЗА ДАТОЮ ТА КАТЕГОРІЄЮ</h2>
+    <form>
+      <label for="filter-date">ДАТА</label>
+      <input type="date" id="filter-date" name="date">
+
+      <label for="filter-category">КАТЕГОРІЯ</label>
+      <select id="filter-category" name="category">
+        <option value="all">УСІ КАТЕГОРІЇ</option>
+        <option value="concert">КОНЦЕРТИ</option>
+        <option value="theatre">ТЕАТР</option>
+        <option value="exhibition">СТЕНДАП</option>
+      </select>
+    </form>
+  </section>
+
+  <section id="events">
+    <h2>ПОДІЇ</h2>
+
+    <article>
+      <h3>КОНЦЕРТИ</h3>
+      <img src="assets/img/a0e3.jpg_v35-banner" alt="Berliner Döner">
+      <p>9 жовтня 2026, пт.
+        19:00 - 21:00</p>
+      <p>POP UP
+        Київ, Кирилівська, 60</p>
+    </article>
+
+    <article>
+      <h3>СТЕНДАП</h3>
+      <img src="assets/img/8a6d.jpg_v35-banner" alt="Імпровізаційний тур">
+      <p>25 вересня 2026, пт.
+        19:00 - 21:00</p>
+      <p>Київський культурний кластер "Краків"</p>
+      Київ, вул. Русанівська Набережна, 12
+    </article>
+
+    <article>
+      <h3>ТЕАТР</h3>
+      <img src="assets/img/9440.jpg_v35-banner" alt="Дуже сумна людина»">
+      <p>2 жовтня 2026, пт.
+        18:30 - 21:30</p>
+      <p>Тернопільська обласна філармонія
+        Тернопіль, вул. Князя Острозького, 11</p>
+    </article>
+  </section>
+
+  <aside id="selected-event">
+    <h2>ДЕТАЛІ ОБРАНОЇ ПОДІЇ</h2>
+    <p>Оберіть подію зі списку, щоб побачити повний опис, місце проведення та вартість квитків.</p>
+  </aside>
+</main>
+
+<footer>
+  <p>Контакти організаторів: info@afisha-mista.ua, +38 (0__) ___-__-__</p>
+</footer>
+
 <script src="js/app.js"></script>
 </body>
 </html>
