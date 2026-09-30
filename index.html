@@ -15,63 +15,71 @@
   </nav>
 </header>
 
-<main>
-  <section id="filters">
-    <h2>ФІЛЬТР ЗА ДАТОЮ ТА КАТЕГОРІЄЮ</h2>
-    <form>
-      <label for="filter-date">ДАТА</label>
-      <input type="date" id="filter-date" name="date">
+<div class="layout">
+  <main>
+    <section id="filters">
+      <h2>ФІЛЬТР ЗА ДАТОЮ ТА КАТЕГОРІЄЮ</h2>
+      <form>
+        <div>
+          <label for="filter-date">ДАТА</label>
+          <input type="date" id="filter-date" name="date">
+        </div>
 
-      <label for="filter-category">КАТЕГОРІЯ</label>
-      <select id="filter-category" name="category">
-        <option value="all">УСІ КАТЕГОРІЇ</option>
-        <option value="concert">КОНЦЕРТИ</option>
-        <option value="theatre">ТЕАТР</option>
-        <option value="exhibition">СТЕНДАП</option>
-      </select>
-    </form>
-  </section>
+        <div>
+          <label for="filter-category">КАТЕГОРІЯ</label>
+          <select id="filter-category" name="category">
+            <option value="all">УСІ КАТЕГОРІЇ</option>
+            <option value="concert">КОНЦЕРТИ</option>
+            <option value="theatre">ТЕАТР</option>
+            <option value="standup">СТЕНДАП</option>
+          </select>
+        </div>
+      </form>
+    </section>
 
-  <section id="events">
-    <h2>ПОДІЇ</h2>
+    <section id="events">
+      <h2>ПОДІЇ</h2>
 
-    <article class="card category-concert">
-      <h3>Berliner Döner</h3>
-      <p class="category">КОНЦЕРТИ</p>
-      <img src="assets/img/a0e3.jpg_v35-banner" alt="Berliner Döner">
-      <p>9 жовтня 2026, пт.
-        19:00 - 21:00</p>
-      <p>POP UP
-        Київ, Кирилівська, 60</p>
-    </article>
+      <div class="cards">
+        <article class="card category-concert">
+          <h3>Berliner Döner</h3>
+          <p class="category">КОНЦЕРТИ</p>
+          <img src="assets/img/a0e3.jpg_v35-banner" alt="Berliner Döner">
+          <p>9 жовтня 2026, пт.
+            19:00 - 21:00</p>
+          <p>POP UP
+            Київ, Кирилівська, 60</p>
+        </article>
 
-    <article class="card category-standup">
-      <h3>Імпровізаційний тур</h3>
-      <p class="category">СТЕНДАП</p>
-      <img src="assets/img/8a6d.jpg_v35-banner" alt="Імпровізаційний тур">
-      <p>25 вересня 2026, пт.
-        19:00 - 21:00</p>
-      <p>Київський культурний кластер "Краків"
-        Київ, вул. Русанівська Набережна, 12</p>
-    </article>
+        <article class="card category-standup">
+          <h3>Імпровізаційний тур</h3>
+          <p class="category">СТЕНДАП</p>
+          <img src="assets/img/8a6d.jpg_v35-banner" alt="Імпровізаційний тур">
+          <p>25 вересня 2026, пт.
+            19:00 - 21:00</p>
+          <p>Київський культурний кластер "Краків"
+            Київ, вул. Русанівська Набережна, 12</p>
+        </article>
 
-    <article class="card category-theatre">
-      <h3>Дуже сумна людина</h3>
-      <p class="category">ТЕАТР</p>
-      <img src="assets/img/9440.jpg_v35-banner" alt="Дуже сумна людина">
-      <p>2 жовтня 2026, пт.
-        18:30 - 21:30</p>
-      <p>Тернопільська обласна філармонія
-        Тернопіль, вул. Князя Острозького, 11</p>
-    </article>
-  </section>
+        <article class="card category-theatre">
+          <h3>Дуже сумна людина</h3>
+          <p class="category">ТЕАТР</p>
+          <img src="assets/img/9440.jpg_v35-banner" alt="Дуже сумна людина">
+          <p>2 жовтня 2026, пт.
+            18:30 - 21:30</p>
+          <p>Тернопільська обласна філармонія
+            Тернопіль, вул. Князя Острозького, 11</p>
+        </article>
+      </div>
+    </section>
+  </main>
 
   <aside id="selected-event">
     <h2>ДЕТАЛІ ОБРАНОЇ ПОДІЇ</h2>
     <p>Оберіть подію зі списку, щоб побачити повний опис, місце проведення та
       вартість квитків.</p>
   </aside>
-</main>
+</div>
 
 <footer>
   <p>Контакти організаторів: info@afisha-mista.ua, +38 (0__) ___-__-__</p>
