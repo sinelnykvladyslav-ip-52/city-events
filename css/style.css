@@ -2,6 +2,11 @@
     box-sizing: border-box;
 }
 
+img {
+    max-width: 100%;
+    height: auto;
+}
+
 body {
     margin: 0;
     font-family: system-ui, sans-serif;
@@ -12,6 +17,10 @@ body {
 }
 
 header {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 12px;
     background-color: #1c1c1c;
     padding: 24px;
     border-bottom: 4px solid #c9a3a3;
@@ -20,48 +29,53 @@ header {
 header h1 {
     color: #ffffff;
     font-size: 2rem;
-    margin: 0 0 12px 0;
+    margin: 0;
+}
+
+header nav {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 header nav a {
     color: #ffffff;
     text-decoration: none;
-    margin-right: 20px;
     font-weight: 600;
 }
-
 header nav a:hover {
     color: #c9a3a3;
 }
-
-main {
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
     max-width: 900px;
     margin: 0 auto;
     padding: 24px;
 }
-
+main {
+    min-width: 0;
+}
 section {
     margin-bottom: 32px;
 }
-
 section h2 {
     font-size: 1.4rem;
     margin-bottom: 16px;
 }
-
 #filters form {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
     align-items: flex-end;
 }
-
 #filters label {
     display: block;
     margin-bottom: 6px;
     font-weight: 600;
 }
-
 #filters input,
 #filters select {
     padding: 8px;
@@ -69,17 +83,20 @@ section h2 {
     border-radius: 4px;
     font-size: 1rem;
 }
-
 #filters input:focus,
 #filters select:focus {
     outline: none;
     border-color: #a3b3c9;
 }
+.cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+}
 
 .card {
     background-color: #ffffff;
     padding: 16px;
-    margin-bottom: 10px;
     border-left: 4px solid #b8b8b8;
 }
 
@@ -96,28 +113,20 @@ section h2 {
 
 .card img {
     width: 100%;
-    max-width: 300px;
     display: block;
     margin-bottom: 8px;
     border-radius: 4px;
 }
 
-.category-concert {
-    border-left-color: #c9a3a3;
-}
-
-.category-theatre {
-    border-left-color: #a3b3c9;
-}
-
-.category-standup {
-    border-left-color: #d6c19a;
-}
+.category-concert { border-left-color: #c9a3a3; }
+.category-theatre { border-left-color: #a3b3c9; }
+.category-standup { border-left-color: #d6c19a; }
 
 aside {
     border: 1px solid #ccc;
     padding: 20px;
     background-color: #dcdce3;
+    align-self: start;
 }
 
 aside h2 {
@@ -129,4 +138,34 @@ footer {
     font-size: 0.85rem;
     color: #666666;
     text-align: center;
+}
+
+@media (min-width: 600px) {
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    header nav {
+        flex-direction: row;
+        gap: 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 48px;
+    }
+
+    .layout {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        max-width: 1200px;
+        padding: 32px 48px;
+    }
+
+    .cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
