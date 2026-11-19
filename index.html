@@ -16,6 +16,7 @@
   <h1>АФІША ПОДІЙ МІСТА</h1>
   <nav>
     <a href="#events">ПОДІЇ</a>
+    <a href="#add-event">ДОДАТИ ПОДІЮ</a>
     <a href="#selected-event">ОБРАНА ПОДІЯ</a>
   </nav>
 </header>
@@ -31,13 +32,13 @@
         </div>
 
         <div>
-          <label for="filter-category">КАТЕГОРІЯ</label>
-          <select id="filter-category" name="category">
-            <option value="all">УСІ КАТЕГОРІЇ</option>
-            <option value="concert">КОНЦЕРТИ</option>
-            <option value="theatre">ТЕАТР</option>
-            <option value="standup">СТЕНДАП</option>
-          </select>
+          <p class="filter-label" id="filter-category-label">КАТЕГОРІЯ</p>
+          <div class="filter-buttons" id="category-filters" role="group" aria-labelledby="filter-category-label">
+            <button type="button" class="active" data-category="all" aria-pressed="true">УСІ КАТЕГОРІЇ</button>
+            <button type="button" data-category="concert" aria-pressed="false">КОНЦЕРТИ</button>
+            <button type="button" data-category="theatre" aria-pressed="false">ТЕАТР</button>
+            <button type="button" data-category="standup" aria-pressed="false">СТЕНДАП</button>
+          </div>
         </div>
       </form>
     </section>
@@ -93,6 +94,34 @@
           <p class="card-place"><strong>Тернопільська обласна філармонія</strong><br>Тернопіль, вул. Князя Острозького, 11</p>
         </article>
       </div>
+    </section>
+
+    <section id="add-event">
+      <h2>ДОДАТИ ПОДІЮ</h2>
+      <form id="add-event-form">
+        <div class="form-field form-field--wide">
+          <label for="add-title">НАЗВА</label>
+          <input type="text" id="add-title" name="title" required pattern=".{3,}" aria-describedby="add-title-error">
+          <p class="field-error" id="add-title-error" aria-live="polite"></p>
+        </div>
+
+        <div class="form-field">
+          <label for="add-category">КАТЕГОРІЯ</label>
+          <select id="add-category" name="category" required>
+            <option value="">ОБЕРІТЬ КАТЕГОРІЮ</option>
+            <option value="concert">КОНЦЕРТИ</option>
+            <option value="theatre">ТЕАТР</option>
+            <option value="standup">СТЕНДАП</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="add-date">ДАТА</label>
+          <input type="date" id="add-date" name="date" required>
+        </div>
+
+        <button type="submit" class="btn-submit">ДОДАТИ ПОДІЮ</button>
+      </form>
     </section>
   </main>
 
