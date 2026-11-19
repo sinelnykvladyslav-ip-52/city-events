@@ -12,6 +12,12 @@ const events = [
 
 const listContainer = document.querySelector('#events-list');
 const eventsCount = document.querySelector('#events-count');
+const filterButtons = document.querySelector('#category-filters');
+const form = document.querySelector('#add-event-form');
+const titleInput = document.querySelector('#add-title');
+const titleError = document.querySelector('#add-title-error');
+const categorySelect = document.querySelector('#add-category');
+const dateInput = document.querySelector('#add-date');
 
 function classifyEvent(event) {
   if (event.category === 'concert') {
@@ -62,8 +68,11 @@ const categoryLabels = {
 
 document.querySelectorAll('#events-list .card').forEach(card => card.remove());
 
+const hasTime = isoDate => isoDate.includes('T');
+const parseEventDate = isoDate => new Date(hasTime(isoDate) ? isoDate : `${isoDate}T00:00`);
+
 function createDateTile(isoDate) {
-  const date = new Date(isoDate);
+  const date = parseEventDate(isoDate);
   const time = document.createElement('time');
   time.className = 'card-date';
   time.setAttribute('datetime', isoDate);
@@ -117,25 +126,98 @@ function renderEvents(list) {
       card.append(img);
     }
 
-    const date = new Date(event.date);
+    const date = parseEventDate(event.date);
+    const weekday = date.toLocaleDateString('uk-UA', { weekday: 'short' });
     const time = document.createElement('p');
     time.className = 'card-time';
-    time.textContent = `${date.toLocaleDateString('uk-UA', { weekday: 'short' })}, ${date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`;
+    time.textContent = hasTime(event.date)
+      ? `${weekday}, ${date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`
+      : weekday;
+    card.append(time);
 
-    const place = document.createElement('p');
-    place.className = 'card-place';
-    const placeName = document.createElement('strong');
-    placeName.textContent = event.place;
-    place.append(placeName, document.createElement('br'), event.address);
+    if (event.place) {
+      const place = document.createElement('p');
+      place.className = 'card-place';
+      const placeName = document.createElement('strong');
+      placeName.textContent = event.place;
+      place.append(placeName, document.createElement('br'), event.address);
+      card.append(place);
+    }
 
-    card.append(time, place);
     listContainer.append(card);
   });
 }
 
-function updateEventsCount(list) {
-  eventsCount.textContent = `Усього подій: ${list.length}`;
+let activeCategory = 'all';
+
+function getVisibleEvents() {
+  if (activeCategory === 'all') {
+    return events;
+  }
+  return events.filter(event => event.category === activeCategory);
 }
 
-renderEvents(events);
-updateEventsCount(events);
+function updateEventsCount(list) {
+  eventsCount.textContent = activeCategory === 'all'
+    ? `Усього подій: ${events.length}`
+    : `Показано подій: ${list.length} з ${events.length}`;
+}
+
+function showEvents() {
+  const visibleEvents = getVisibleEvents();
+  renderEvents(visibleEvents);
+  updateEventsCount(visibleEvents);
+}
+
+function setActiveCategory(category) {
+  activeCategory = category;
+  filterButtons.querySelectorAll('button').forEach(button => {
+    const isActive = button.dataset.category === category;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive);
+  });
+  showEvents();
+}
+
+filterButtons.addEventListener('click', event => {
+  const button = event.target.closest('button[data-category]');
+  if (!button) {
+    return;
+  }
+  setActiveCategory(button.dataset.category);
+});
+
+function validateTitle() {
+  const length = titleInput.value.trim().length;
+  if (length === 0) {
+    titleInput.setCustomValidity('Введіть назву події');
+  } else if (length < 3) {
+    titleInput.setCustomValidity('Назва події має містити щонайменше 3 символи');
+  } else {
+    titleInput.setCustomValidity('');
+  }
+  titleError.textContent = titleInput.validationMessage;
+}
+
+titleInput.addEventListener('input', validateTitle);
+titleInput.addEventListener('invalid', validateTitle);
+
+form.addEventListener('submit', event => {
+  event.preventDefault();
+
+  const newEvent = {
+    title: titleInput.value.trim(),
+    category: categorySelect.value,
+    date: dateInput.value,
+  };
+
+  events.push(newEvent);
+  console.log(`Додано подію «${newEvent.title}», усього подій: ${events.length}`);
+
+  setActiveCategory(activeCategory === newEvent.category ? activeCategory : 'all');
+
+  form.reset();
+  titleError.textContent = '';
+});
+
+showEvents();
