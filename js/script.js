@@ -1,4 +1,5 @@
 const HOLIDAYS_API_URL = 'https://date.nager.at/api/v3/PublicHolidays/2026/UA';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 console.log('script.js підключено');
 
@@ -11,19 +12,6 @@ const events = [
   { title: 'Відкритий мікрофон для початківців', category: 'standup', date: '2026-10-30T20:00', place: 'Underground Stand Up Club', address: 'Київ, вул. Ярославська, 6' },
   { title: 'Джазовий квартет під відкритим небом', category: 'concert', date: '2026-11-07T17:00', place: 'Арт-простір «Платформа»', address: 'Київ, вул. Біломорська, 1' },
 ];
-
-const listContainer = document.querySelector('#events-list');
-const eventsCount = document.querySelector('#events-count');
-const filterButtons = document.querySelector('#category-filters');
-const form = document.querySelector('#add-event-form');
-const titleInput = document.querySelector('#add-title');
-const titleError = document.querySelector('#add-title-error');
-const categorySelect = document.querySelector('#add-category');
-const dateInput = document.querySelector('#add-date');
-const holidaysList = document.querySelector('#holidays-list');
-const holidaysLoading = document.querySelector('#holidays-loading');
-const holidaysError = document.querySelector('#holidays-error');
-const reloadButton = document.querySelector('#holidays-reload');
 
 function classifyEvent(event) {
   if (event.category === 'concert') {
@@ -73,210 +61,188 @@ const categoryLabels = {
   holiday: 'Свято',
 };
 
-document.querySelectorAll('#events-list .card').forEach(card => card.remove());
-
 const hasTime = isoDate => isoDate.includes('T');
 const parseEventDate = isoDate => new Date(hasTime(isoDate) ? isoDate : `${isoDate}T00:00`);
+const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-function createDateTile(isoDate) {
-  const date = parseEventDate(isoDate);
-  const time = document.createElement('time');
-  time.className = 'card-date';
-  time.setAttribute('datetime', isoDate);
-
-  const day = document.createElement('span');
-  day.className = 'card-date__day';
-  day.textContent = date.getDate();
-
-  const month = document.createElement('span');
-  month.className = 'card-date__month';
-  month.textContent = date.toLocaleDateString('uk-UA', { month: 'short' });
-
-  const year = document.createElement('span');
-  year.className = 'card-date__year';
-  year.textContent = date.getFullYear();
-
-  time.append(day, month, year);
-  return time;
-}
-
-function renderEvents(list, container = listContainer) {
-  container.innerHTML = '';
-
-  list.forEach(event => {
-    const card = document.createElement('article');
-    card.classList.add('card');
-    card.dataset.category = event.category;
-
-    if (event.category in categoryLabels) {
-      card.classList.add(`category-${event.category}`);
-    }
-
-    const head = document.createElement('div');
-    head.className = 'card-head';
-
-    const category = document.createElement('p');
-    category.className = 'category';
-    category.textContent = categoryLabels[event.category] ?? event.category;
-
-    head.append(createDateTile(event.date), category);
-
-    const title = document.createElement('h3');
-    title.textContent = event.title;
-
-    card.append(head, title);
-
-    if (event.image) {
-      const img = document.createElement('img');
-      img.src = event.image;
-      img.alt = event.title;
-      card.append(img);
-    }
-
-    const date = parseEventDate(event.date);
-    const time = document.createElement('p');
-    time.className = 'card-time';
-    time.textContent = hasTime(event.date)
-      ? `${date.toLocaleDateString('uk-UA', { weekday: 'short' })}, ${date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`
-      : date.toLocaleDateString('uk-UA', { weekday: 'long' });
-    card.append(time);
-
-    if (event.note) {
-      const note = document.createElement('p');
-      note.className = 'card-note';
-      note.textContent = event.note;
-      card.append(note);
-    }
-
-    if (event.place) {
-      const place = document.createElement('p');
-      place.className = 'card-place';
-      const placeName = document.createElement('strong');
-      placeName.textContent = event.place;
-      place.append(placeName, document.createElement('br'), event.address);
-      card.append(place);
-    }
-
-    container.append(card);
-  });
-}
-
-let activeCategory = 'all';
-
-function getVisibleEvents() {
-  if (activeCategory === 'all') {
-    return events;
+function pluralDays(n) {
+  const lastDigit = n % 10;
+  const lastTwoDigits = n % 100;
+  if (lastDigit === 1 && lastTwoDigits !== 11) {
+    return 'день';
   }
-  return events.filter(event => event.category === activeCategory);
-}
-
-function updateEventsCount(list) {
-  eventsCount.textContent = activeCategory === 'all'
-    ? `Усього подій: ${events.length}`
-    : `Показано подій: ${list.length} з ${events.length}`;
-}
-
-function showEvents() {
-  const visibleEvents = getVisibleEvents();
-  renderEvents(visibleEvents);
-  updateEventsCount(visibleEvents);
-}
-
-function setActiveCategory(category) {
-  activeCategory = category;
-  filterButtons.querySelectorAll('button').forEach(button => {
-    const isActive = button.dataset.category === category;
-    button.classList.toggle('active', isActive);
-    button.setAttribute('aria-pressed', isActive);
-  });
-  showEvents();
-}
-
-filterButtons.addEventListener('click', event => {
-  const button = event.target.closest('button[data-category]');
-  if (!button) {
-    return;
+  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) {
+    return 'дні';
   }
-  setActiveCategory(button.dataset.category);
-});
-
-function validateTitle() {
-  const length = titleInput.value.trim().length;
-  if (length === 0) {
-    titleInput.setCustomValidity('Введіть назву події');
-  } else if (length < 3) {
-    titleInput.setCustomValidity('Назва події має містити щонайменше 3 символи');
-  } else {
-    titleInput.setCustomValidity('');
-  }
-  titleError.textContent = titleInput.validationMessage;
+  return 'днів';
 }
 
-titleInput.addEventListener('input', validateTitle);
-titleInput.addEventListener('invalid', validateTitle);
+const EventCard = {
+  props: {
+    title: { type: String, required: true },
+    category: { type: String, required: true },
+    date: { type: String, required: true },
+    image: String,
+    place: String,
+    address: String,
+    note: String,
+  },
+  computed: {
+    eventDate() {
+      return parseEventDate(this.date);
+    },
+    daysLeft() {
+      return Math.round((startOfDay(this.eventDate) - startOfDay(new Date())) / DAY_MS);
+    },
+    daysText() {
+      const days = Math.abs(this.daysLeft);
+      if (this.daysLeft === 0) {
+        return 'Сьогодні';
+      }
+      if (this.daysLeft === 1) {
+        return 'Завтра';
+      }
+      if (this.daysLeft > 1) {
+        return `Через ${days} ${pluralDays(days)}`;
+      }
+      if (this.daysLeft === -1) {
+        return 'Відбулася вчора';
+      }
+      return `Відбулася ${days} ${pluralDays(days)} тому`;
+    },
+    categoryLabel() {
+      return categoryLabels[this.category] ?? this.category;
+    },
+    monthText() {
+      return this.eventDate.toLocaleDateString('uk-UA', { month: 'short' });
+    },
+    timeText() {
+      if (!hasTime(this.date)) {
+        return this.eventDate.toLocaleDateString('uk-UA', { weekday: 'long' });
+      }
+      const weekday = this.eventDate.toLocaleDateString('uk-UA', { weekday: 'short' });
+      const time = this.eventDate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+      return `${weekday}, ${time}`;
+    },
+  },
+  template: `
+    <article class="card" :class="'category-' + category" :data-category="category">
+      <div class="card-head">
+        <time class="card-date" :datetime="date">
+          <span class="card-date__day">{{ eventDate.getDate() }}</span>
+          <span class="card-date__month">{{ monthText }}</span>
+          <span class="card-date__year">{{ eventDate.getFullYear() }}</span>
+        </time>
+        <p class="category">{{ categoryLabel }}</p>
+      </div>
+      <h3>{{ title }}</h3>
+      <p class="card-days" :class="{ 'card-days--today': daysLeft === 0, 'card-days--past': daysLeft < 0 }">{{ daysText }}</p>
+      <img v-if="image" :src="image" :alt="title">
+      <p class="card-time">{{ timeText }}</p>
+      <p v-if="note" class="card-note">{{ note }}</p>
+      <p v-if="place" class="card-place"><strong>{{ place }}</strong><br>{{ address }}</p>
+    </article>
+  `,
+};
 
-form.addEventListener('submit', event => {
-  event.preventDefault();
+Vue.createApp({
+  components: { EventCard },
+  data() {
+    return {
+      events: events.map((event, index) => ({ id: index + 1, ...event })),
+      activeCategory: 'all',
+      categoryFilters: [
+        { value: 'all', label: 'УСІ КАТЕГОРІЇ' },
+        { value: 'concert', label: 'КОНЦЕРТИ' },
+        { value: 'theatre', label: 'ТЕАТР' },
+        { value: 'standup', label: 'СТЕНДАП' },
+      ],
+      newTitle: '',
+      newCategory: '',
+      newDate: '',
+      titleError: '',
+      holidays: [],
+      holidaysLoading: false,
+      holidaysError: '',
+    };
+  },
+  computed: {
+    visibleEvents() {
+      if (this.activeCategory === 'all') {
+        return this.events;
+      }
+      return this.events.filter(event => event.category === this.activeCategory);
+    },
+    countText() {
+      return this.activeCategory === 'all'
+        ? `Усього подій: ${this.events.length}`
+        : `Показано подій: ${this.visibleEvents.length} з ${this.events.length}`;
+    },
+  },
+  methods: {
+    validateTitle() {
+      const input = this.$refs.titleInput;
+      const length = input.value.trim().length;
+      if (length === 0) {
+        input.setCustomValidity('Введіть назву події');
+      } else if (length < 3) {
+        input.setCustomValidity('Назва події має містити щонайменше 3 символи');
+      } else {
+        input.setCustomValidity('');
+      }
+      this.titleError = input.validationMessage;
+    },
+    addEvent() {
+      const newEvent = {
+        id: Date.now(),
+        title: this.newTitle.trim(),
+        category: this.newCategory,
+        date: this.newDate,
+      };
+      this.events.push(newEvent);
+      console.log(`Додано подію «${newEvent.title}», усього подій: ${this.events.length}`);
 
-  const newEvent = {
-    title: titleInput.value.trim(),
-    category: categorySelect.value,
-    date: dateInput.value,
-  };
+      if (this.activeCategory !== newEvent.category) {
+        this.activeCategory = 'all';
+      }
 
-  events.push(newEvent);
-  console.log(`Додано подію «${newEvent.title}», усього подій: ${events.length}`);
-
-  setActiveCategory(activeCategory === newEvent.category ? activeCategory : 'all');
-
-  form.reset();
-  titleError.textContent = '';
-});
-
-showEvents();
-
-const toHolidayEvent = holiday => ({
-  title: holiday.localName,
-  category: 'holiday',
-  date: holiday.date,
-  note: holiday.name,
-});
-
-function setHolidaysLoading(isLoading) {
-  holidaysLoading.hidden = !isLoading;
-  reloadButton.disabled = isLoading;
-  holidaysList.setAttribute('aria-busy', isLoading);
-}
-
-function showHolidaysError(message) {
-  holidaysError.textContent = message;
-  holidaysError.hidden = false;
-}
-
-async function loadHolidays(url = HOLIDAYS_API_URL) {
-  setHolidaysLoading(true);
-  holidaysError.hidden = true;
-  try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) {
-      const error = new Error(`Сервер відповів кодом ${response.status}`);
-      error.status = response.status;
-      throw error;
-    }
-    const data = await response.json();
-    console.log('Свята з API Nager.Date:', data);
-    renderEvents(data.map(toHolidayEvent), holidaysList);
-  } catch (error) {
-    holidaysList.innerHTML = '';
-    showHolidaysError(error.status === 404
-      ? 'Дані про події не знайдено'
-      : 'Не вдалося завантажити свята. Перевірте з\'єднання й натисніть «Оновити».');
-    console.error('Помилка завантаження свят:', error);
-  } finally {
-    setHolidaysLoading(false);
-  }
-}
-
-reloadButton.addEventListener('click', () => loadHolidays());
-
-loadHolidays();
+      this.newTitle = '';
+      this.newCategory = '';
+      this.newDate = '';
+      this.titleError = '';
+      this.$refs.form.reset();
+    },
+    async loadHolidays(url = HOLIDAYS_API_URL) {
+      this.holidaysLoading = true;
+      this.holidaysError = '';
+      try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) {
+          const error = new Error(`Сервер відповів кодом ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
+        const data = await response.json();
+        console.log('Свята з API Nager.Date:', data);
+        this.holidays = data.map(holiday => ({
+          id: `${holiday.date}-${holiday.name}`,
+          title: holiday.localName,
+          category: 'holiday',
+          date: holiday.date,
+          note: holiday.name,
+        }));
+      } catch (error) {
+        this.holidays = [];
+        this.holidaysError = error.status === 404
+          ? 'Дані про події не знайдено'
+          : 'Не вдалося завантажити свята. Перевірте з\'єднання й натисніть «Оновити».';
+        console.error('Помилка завантаження свят:', error);
+      } finally {
+        this.holidaysLoading = false;
+      }
+    },
+  },
+  mounted() {
+    this.loadHolidays();
+  },
+}).mount('#app');
