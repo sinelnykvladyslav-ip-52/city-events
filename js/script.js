@@ -1,3 +1,5 @@
+const HOLIDAYS_API_URL = 'https://date.nager.at/api/v3/PublicHolidays/2026/UA';
+
 console.log('script.js підключено');
 
 const events = [
@@ -18,6 +20,10 @@ const titleInput = document.querySelector('#add-title');
 const titleError = document.querySelector('#add-title-error');
 const categorySelect = document.querySelector('#add-category');
 const dateInput = document.querySelector('#add-date');
+const holidaysList = document.querySelector('#holidays-list');
+const holidaysLoading = document.querySelector('#holidays-loading');
+const holidaysError = document.querySelector('#holidays-error');
+const reloadButton = document.querySelector('#holidays-reload');
 
 function classifyEvent(event) {
   if (event.category === 'concert') {
@@ -64,6 +70,7 @@ const categoryLabels = {
   concert: 'Концерти',
   theatre: 'Театр',
   standup: 'Стендап',
+  holiday: 'Свято',
 };
 
 document.querySelectorAll('#events-list .card').forEach(card => card.remove());
@@ -93,8 +100,8 @@ function createDateTile(isoDate) {
   return time;
 }
 
-function renderEvents(list) {
-  listContainer.innerHTML = '';
+function renderEvents(list, container = listContainer) {
+  container.innerHTML = '';
 
   list.forEach(event => {
     const card = document.createElement('article');
@@ -127,13 +134,19 @@ function renderEvents(list) {
     }
 
     const date = parseEventDate(event.date);
-    const weekday = date.toLocaleDateString('uk-UA', { weekday: 'short' });
     const time = document.createElement('p');
     time.className = 'card-time';
     time.textContent = hasTime(event.date)
-      ? `${weekday}, ${date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`
-      : weekday;
+      ? `${date.toLocaleDateString('uk-UA', { weekday: 'short' })}, ${date.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}`
+      : date.toLocaleDateString('uk-UA', { weekday: 'long' });
     card.append(time);
+
+    if (event.note) {
+      const note = document.createElement('p');
+      note.className = 'card-note';
+      note.textContent = event.note;
+      card.append(note);
+    }
 
     if (event.place) {
       const place = document.createElement('p');
@@ -144,7 +157,7 @@ function renderEvents(list) {
       card.append(place);
     }
 
-    listContainer.append(card);
+    container.append(card);
   });
 }
 
@@ -221,3 +234,49 @@ form.addEventListener('submit', event => {
 });
 
 showEvents();
+
+const toHolidayEvent = holiday => ({
+  title: holiday.localName,
+  category: 'holiday',
+  date: holiday.date,
+  note: holiday.name,
+});
+
+function setHolidaysLoading(isLoading) {
+  holidaysLoading.hidden = !isLoading;
+  reloadButton.disabled = isLoading;
+  holidaysList.setAttribute('aria-busy', isLoading);
+}
+
+function showHolidaysError(message) {
+  holidaysError.textContent = message;
+  holidaysError.hidden = false;
+}
+
+async function loadHolidays(url = HOLIDAYS_API_URL) {
+  setHolidaysLoading(true);
+  holidaysError.hidden = true;
+  try {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      const error = new Error(`Сервер відповів кодом ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+    const data = await response.json();
+    console.log('Свята з API Nager.Date:', data);
+    renderEvents(data.map(toHolidayEvent), holidaysList);
+  } catch (error) {
+    holidaysList.innerHTML = '';
+    showHolidaysError(error.status === 404
+      ? 'Дані про події не знайдено'
+      : 'Не вдалося завантажити свята. Перевірте з\'єднання й натисніть «Оновити».');
+    console.error('Помилка завантаження свят:', error);
+  } finally {
+    setHolidaysLoading(false);
+  }
+}
+
+reloadButton.addEventListener('click', () => loadHolidays());
+
+loadHolidays();
