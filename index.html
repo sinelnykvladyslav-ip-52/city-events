@@ -16,6 +16,7 @@
   <h1>АФІША ПОДІЙ МІСТА</h1>
   <nav>
     <a href="#events">ПОДІЇ</a>
+    <a href="#holidays">СВЯТА</a>
     <a href="#add-event">ДОДАТИ ПОДІЮ</a>
     <a href="#selected-event">ОБРАНА ПОДІЯ</a>
   </nav>
@@ -94,6 +95,16 @@
           <p class="card-place"><strong>Тернопільська обласна філармонія</strong><br>Тернопіль, вул. Князя Острозького, 11</p>
         </article>
       </div>
+    </section>
+
+    <section id="holidays">
+      <h2>ДЕРЖАВНІ СВЯТА 2026</h2>
+      <div class="holidays-bar">
+        <button type="button" class="btn-secondary" id="holidays-reload">ОНОВИТИ</button>
+        <p class="loading" id="holidays-loading" hidden>Завантаження свят…</p>
+      </div>
+      <p class="load-error" id="holidays-error" role="alert" hidden></p>
+      <div class="cards" id="holidays-list"></div>
     </section>
 
     <section id="add-event">
