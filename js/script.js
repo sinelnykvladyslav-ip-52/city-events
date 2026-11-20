@@ -27,6 +27,8 @@ function classifyEvent(event) {
     return 'Театр — вистава на сцені';
   } else if (event.category === 'standup') {
     return 'Стендап — гумористичний виступ';
+  } else if (event.category === 'holiday') {
+    return 'Свято — державне свято України';
   } else {
     return 'Інша подія';
   }
@@ -66,6 +68,7 @@ const categoryLabels = {
   theatre: 'Театр',
   standup: 'Стендап',
   holiday: 'Свято',
+  saved: 'Обране',
 };
 
 const hasTime = isoDate => isoDate.includes('T');
@@ -116,6 +119,9 @@ function eventLocation(event) {
   if (event.place) {
     return `${event.place}, ${event.address}`;
   }
+  if (event.location) {
+    return event.location;
+  }
   return event.category === 'holiday' ? 'Україна' : 'Місце уточнюється';
 }
 
@@ -126,6 +132,20 @@ function toSavedEvent(event) {
     name: event.title,
     location: eventLocation(event),
   };
+}
+
+function fromSavedEvent(record) {
+  return {
+    id: record.id,
+    title: record.name,
+    category: 'saved',
+    date: record.date,
+    location: record.location,
+  };
+}
+
+function eventHref(id) {
+  return `#/events/${encodeURIComponent(id)}`;
 }
 
 function saveToLocalStorage(items) {
@@ -240,6 +260,7 @@ const DaysProgress = {
 const EventCard = {
   components: { DaysProgress },
   props: {
+    id: { type: [Number, String], required: true },
     title: { type: String, required: true },
     category: { type: String, required: true },
     date: { type: String, required: true },
@@ -248,9 +269,13 @@ const EventCard = {
     address: String,
     note: String,
     saved: Boolean,
+    linked: { type: Boolean, default: true },
   },
   emits: ['toggle-save'],
   computed: {
+    href() {
+      return eventHref(this.id);
+    },
     eventDate() {
       return parseEventDate(this.date);
     },
@@ -285,7 +310,7 @@ const EventCard = {
         </time>
         <p class="category">{{ categoryLabel }}</p>
       </div>
-      <h3>{{ title }}</h3>
+      <h3><a v-if="linked" :href="href" data-link>{{ title }}</a><template v-else>{{ title }}</template></h3>
       <p class="card-days" :class="{ 'card-days--today': daysLeft === 0, 'card-days--past': daysLeft < 0 }">{{ daysText }}</p>
       <days-progress :days-left="daysLeft"></days-progress>
       <img v-if="image" :src="image" :alt="title">
@@ -301,10 +326,97 @@ const EventCard = {
   `,
 };
 
-Vue.createApp({
+const NotFoundView = {
+  inject: ['app'],
+  props: {
+    title: { type: String, default: 'СТОРІНКУ НЕ ЗНАЙДЕНО' },
+    text: String,
+  },
+  computed: {
+    message() {
+      return this.text ?? `За адресою «#${this.app.path}» в афіші нічого немає.`;
+    },
+  },
+  template: '#not-found-view',
+};
+
+const HomeView = {
+  inject: ['app'],
   components: { EventCard, DaysProgress },
+  template: '#home-view',
+};
+
+const EventView = {
+  inject: ['app'],
+  components: { EventCard, NotFoundView },
+  props: {
+    id: { type: String, required: true },
+  },
+  computed: {
+    event() {
+      return this.app.findEvent(this.id);
+    },
+    details() {
+      return [
+        { label: 'Тип', value: classifyEvent(this.event) },
+        { label: 'Дата', value: this.app.savedDateText(this.event.date) },
+        { label: 'Місце', value: eventLocation(this.event) },
+      ];
+    },
+  },
+  template: '#event-view',
+};
+
+const SavedView = {
+  inject: ['app'],
+  template: '#saved-view',
+};
+
+const routes = [
+  { path: '/', view: HomeView },
+  { path: '/events/:id', view: EventView },
+  { path: '/saved', view: SavedView },
+];
+
+function matchRoute(path) {
+  const pathParts = path.split('/').filter(Boolean);
+  for (const route of routes) {
+    const routeParts = route.path.split('/').filter(Boolean);
+    if (routeParts.length !== pathParts.length) {
+      continue;
+    }
+    const params = {};
+    const isMatch = routeParts.every((part, i) => {
+      if (part.startsWith(':')) {
+        params[part.slice(1)] = pathParts[i];
+        return true;
+      }
+      return part === pathParts[i];
+    });
+    if (isMatch) {
+      return { view: route.view, params };
+    }
+  }
+  return null;
+}
+
+function currentPath() {
+  const path = location.hash.slice(1) || '/';
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+Vue.createApp({
+  provide() {
+    return { app: this };
+  },
   data() {
     return {
+      path: currentPath(),
+      section: '',
       events: events.map(event => ({ ...event })),
       activeCategory: 'all',
       categoryFilters: [
@@ -321,11 +433,15 @@ Vue.createApp({
       holidaysLoading: false,
       holidaysError: '',
       savedEvents: [],
+      savedLoading: true,
       useLocalStorage: false,
       storageError: '',
     };
   },
   computed: {
+    page() {
+      return matchRoute(this.path) ?? { view: NotFoundView, params: {} };
+    },
     visibleEvents() {
       if (this.activeCategory === 'all') {
         return this.events;
@@ -356,8 +472,45 @@ Vue.createApp({
     },
   },
   methods: {
-    validateTitle() {
-      const input = this.$refs.titleInput;
+    eventHref,
+    findEvent(id) {
+      const event = [...this.events, ...this.holidays].find(item => String(item.id) === id);
+      if (event) {
+        return event;
+      }
+      const record = this.savedEvents.find(item => String(item.id) === id);
+      return record ? fromSavedEvent(record) : null;
+    },
+    renderRoute() {
+      this.path = currentPath();
+      this.$nextTick(() => {
+        const target = this.section && document.getElementById(this.section);
+        if (target) {
+          target.scrollIntoView();
+        } else {
+          window.scrollTo(0, 0);
+        }
+        this.section = '';
+      });
+    },
+    navigate(path, section = '') {
+      this.section = section;
+      if (location.hash === `#${path}`) {
+        this.renderRoute();
+      } else {
+        location.hash = path;
+      }
+    },
+    onLinkClick(event) {
+      const link = event.target.closest('a[data-link]');
+      if (!link || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+      event.preventDefault();
+      this.navigate(link.getAttribute('href').slice(1), link.dataset.section);
+    },
+    validateTitle(event) {
+      const input = event.target;
       const length = input.value.trim().length;
       if (length === 0) {
         input.setCustomValidity('Введіть назву події');
@@ -368,7 +521,7 @@ Vue.createApp({
       }
       this.titleError = input.validationMessage;
     },
-    addEvent() {
+    addEvent(event) {
       const newEvent = {
         id: Date.now(),
         title: this.newTitle.trim(),
@@ -386,7 +539,7 @@ Vue.createApp({
       this.newCategory = '';
       this.newDate = '';
       this.titleError = '';
-      this.$refs.form.reset();
+      event.target.reset();
     },
     async loadHolidays(url = HOLIDAYS_API_URL) {
       this.holidaysLoading = true;
@@ -429,6 +582,8 @@ Vue.createApp({
         this.useLocalStorage = true;
         this.storageError = 'Базу IndexedDB не вдалося відкрити (можливо, увімкнено приватний перегляд). Обране зберігатиметься лише в localStorage.';
         this.savedEvents = loadFromLocalStorage();
+      } finally {
+        this.savedLoading = false;
       }
     },
     async saveEvent(event) {
@@ -472,6 +627,9 @@ Vue.createApp({
     },
   },
   mounted() {
+    history.scrollRestoration = 'manual';
+    window.addEventListener('hashchange', this.renderRoute);
+    document.addEventListener('click', this.onLinkClick);
     this.loadSaved();
     this.loadHolidays();
   },
