@@ -5,6 +5,8 @@ const MIGRATED_KEY = 'savedEventsMigrated';
 const DB_NAME = 'CityEventsDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'savedEvents';
+const PROGRESS_DAYS = 60;
+const UPCOMING_LIMIT = 4;
 
 console.log('script.js підключено');
 
@@ -80,6 +82,34 @@ function pluralDays(n) {
     return 'дні';
   }
   return 'днів';
+}
+
+function daysUntil(isoDate) {
+  return Math.round((startOfDay(parseEventDate(isoDate)) - startOfDay(new Date())) / DAY_MS);
+}
+
+function daysLabel(daysLeft) {
+  const days = Math.abs(daysLeft);
+  if (daysLeft === 0) {
+    return 'Сьогодні';
+  }
+  if (daysLeft === 1) {
+    return 'Завтра';
+  }
+  if (daysLeft > 1) {
+    return `Через ${days} ${pluralDays(days)}`;
+  }
+  if (daysLeft === -1) {
+    return 'Відбулася вчора';
+  }
+  return `Відбулася ${days} ${pluralDays(days)} тому`;
+}
+
+function progressPercent(daysLeft) {
+  if (daysLeft <= 0) {
+    return 100;
+  }
+  return Math.max(0, Math.round((1 - daysLeft / PROGRESS_DAYS) * 100));
 }
 
 function eventLocation(event) {
@@ -183,7 +213,32 @@ async function migrateFromLocalStorage() {
   return moved;
 }
 
+const DaysProgress = {
+  props: {
+    daysLeft: { type: Number, required: true },
+  },
+  data() {
+    return { ready: false };
+  },
+  computed: {
+    percent() {
+      return progressPercent(this.daysLeft);
+    },
+  },
+  mounted() {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      this.ready = true;
+    }));
+  },
+  template: `
+    <div class="days-progress" :class="{ 'days-progress--past': daysLeft < 0 }" aria-hidden="true">
+      <div class="days-progress__fill" :style="{ width: (ready ? percent : 0) + '%' }"></div>
+    </div>
+  `,
+};
+
 const EventCard = {
+  components: { DaysProgress },
   props: {
     title: { type: String, required: true },
     category: { type: String, required: true },
@@ -200,23 +255,10 @@ const EventCard = {
       return parseEventDate(this.date);
     },
     daysLeft() {
-      return Math.round((startOfDay(this.eventDate) - startOfDay(new Date())) / DAY_MS);
+      return daysUntil(this.date);
     },
     daysText() {
-      const days = Math.abs(this.daysLeft);
-      if (this.daysLeft === 0) {
-        return 'Сьогодні';
-      }
-      if (this.daysLeft === 1) {
-        return 'Завтра';
-      }
-      if (this.daysLeft > 1) {
-        return `Через ${days} ${pluralDays(days)}`;
-      }
-      if (this.daysLeft === -1) {
-        return 'Відбулася вчора';
-      }
-      return `Відбулася ${days} ${pluralDays(days)} тому`;
+      return daysLabel(this.daysLeft);
     },
     categoryLabel() {
       return categoryLabels[this.category] ?? this.category;
@@ -245,6 +287,7 @@ const EventCard = {
       </div>
       <h3>{{ title }}</h3>
       <p class="card-days" :class="{ 'card-days--today': daysLeft === 0, 'card-days--past': daysLeft < 0 }">{{ daysText }}</p>
+      <days-progress :days-left="daysLeft"></days-progress>
       <img v-if="image" :src="image" :alt="title">
       <p class="card-time">{{ timeText }}</p>
       <p v-if="note" class="card-note">{{ note }}</p>
@@ -259,7 +302,7 @@ const EventCard = {
 };
 
 Vue.createApp({
-  components: { EventCard },
+  components: { EventCard, DaysProgress },
   data() {
     return {
       events: events.map(event => ({ ...event })),
@@ -299,6 +342,17 @@ Vue.createApp({
     },
     sortedSaved() {
       return [...this.savedEvents].sort((a, b) => a.date.localeCompare(b.date));
+    },
+    upcomingEvents() {
+      const byId = new Map();
+      [...this.events, ...this.holidays].map(toSavedEvent).concat(this.savedEvents)
+        .forEach(item => byId.set(item.id, item));
+      return [...byId.values()]
+        .map(item => ({ ...item, daysLeft: daysUntil(item.date) }))
+        .filter(item => item.daysLeft >= 0)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, UPCOMING_LIMIT)
+        .map(item => ({ ...item, daysText: daysLabel(item.daysLeft) }));
     },
   },
   methods: {
