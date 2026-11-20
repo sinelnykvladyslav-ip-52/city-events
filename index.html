@@ -16,6 +16,7 @@
 <header>
   <h1>АФІША ПОДІЙ МІСТА</h1>
   <nav>
+    <a href="#upcoming">НАЙБЛИЖЧІ</a>
     <a href="#events">ПОДІЇ</a>
     <a href="#holidays">СВЯТА</a>
     <a href="#add-event">ДОДАТИ ПОДІЮ</a>
@@ -25,6 +26,21 @@
 
 <div class="layout" id="app" v-cloak>
   <main>
+    <section id="upcoming">
+      <h2>НАЙБЛИЖЧІ ПОДІЇ</h2>
+      <p class="upcoming-empty" v-if="upcomingEvents.length === 0">Найближчим часом подій немає.</p>
+      <ol class="upcoming-list" id="upcoming-list" v-else>
+        <li class="upcoming-item" v-for="(item, index) in upcomingEvents" :key="item.id" :style="{ '--i': index }">
+          <div class="upcoming-item__text">
+            <strong>{{ item.name }}</strong>
+            <span>{{ savedDateText(item.date) }} · {{ item.location }}</span>
+          </div>
+          <p class="upcoming-item__days" :class="{ 'upcoming-item__days--today': item.daysLeft === 0 }">{{ item.daysText }}</p>
+          <days-progress :days-left="item.daysLeft"></days-progress>
+        </li>
+      </ol>
+    </section>
+
     <section id="filters">
       <h2>ФІЛЬТР ЗА ДАТОЮ ТА КАТЕГОРІЄЮ</h2>
       <form>
