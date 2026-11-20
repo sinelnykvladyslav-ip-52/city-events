@@ -432,6 +432,34 @@ section h2::after {
     color: var(--color-text-muted);
 }
 
+.card-actions {
+    margin-top: auto;
+    padding-top: var(--space-3);
+}
+
+.card-save {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    background-color: var(--color-surface);
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: var(--fs-small);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.card-save:hover {
+    border-color: var(--color-primary);
+}
+
+.card-save--active {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-soft);
+}
+
 .category-concert { border-left-color: var(--color-concert); }
 .category-theatre { border-left-color: var(--color-theatre); }
 .category-standup { border-left-color: var(--color-standup); }
@@ -525,6 +553,61 @@ aside {
 aside p {
     margin: 0;
     max-width: 65ch;
+}
+
+.saved-list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.saved-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+    background-color: var(--color-surface);
+}
+
+.saved-list time,
+.saved-list strong,
+.saved-list span {
+    grid-column: 1;
+}
+
+.saved-list time {
+    font-size: var(--fs-small);
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.saved-list span {
+    font-size: var(--fs-small);
+    color: var(--color-text-muted);
+}
+
+.saved-remove {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    min-height: 44px;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    background-color: var(--color-surface);
+    color: var(--color-error);
+    font-family: inherit;
+    font-size: var(--fs-small);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.saved-remove:hover {
+    border-color: var(--color-error);
+    background-color: var(--color-error-soft);
 }
 
 footer {
