@@ -19,12 +19,12 @@
     <a href="#events">ПОДІЇ</a>
     <a href="#holidays">СВЯТА</a>
     <a href="#add-event">ДОДАТИ ПОДІЮ</a>
-    <a href="#selected-event">ОБРАНА ПОДІЯ</a>
+    <a href="#saved-events">ОБРАНЕ</a>
   </nav>
 </header>
 
-<div class="layout">
-  <main id="app" v-cloak>
+<div class="layout" id="app" v-cloak>
+  <main>
     <section id="filters">
       <h2>ФІЛЬТР ЗА ДАТОЮ ТА КАТЕГОРІЄЮ</h2>
       <form>
@@ -54,7 +54,8 @@
       <div class="cards" id="events-list">
         <event-card v-for="item in visibleEvents" :key="item.id"
                     :title="item.title" :category="item.category" :date="item.date"
-                    :image="item.image" :place="item.place" :address="item.address"></event-card>
+                    :image="item.image" :place="item.place" :address="item.address"
+                    :saved="savedIds.has(item.id)" @toggle-save="toggleSaved(item)"></event-card>
       </div>
     </section>
 
@@ -69,7 +70,8 @@
       <div class="cards" id="holidays-list" :aria-busy="holidaysLoading">
         <event-card v-for="holiday in holidays" :key="holiday.id"
                     :title="holiday.title" :category="holiday.category" :date="holiday.date"
-                    :note="holiday.note"></event-card>
+                    :note="holiday.note"
+                    :saved="savedIds.has(holiday.id)" @toggle-save="toggleSaved(holiday)"></event-card>
       </div>
     </section>
 
@@ -103,10 +105,20 @@
     </section>
   </main>
 
-  <aside id="selected-event">
-    <h2>ДЕТАЛІ ОБРАНОЇ ПОДІЇ</h2>
-    <p>Оберіть подію зі списку, щоб побачити повний опис, місце проведення та
-      вартість квитків.</p>
+  <aside id="saved-events">
+    <h2>ОБРАНІ ПОДІЇ</h2>
+    <p class="load-error" id="storage-error" role="alert" v-if="storageError">{{ storageError }}</p>
+    <p class="saved-empty" v-if="sortedSaved.length === 0">Натисніть «Додати в обране» на картці події, і вона
+      збережеться тут навіть після перезавантаження сторінки.</p>
+    <ul class="saved-list" id="saved-list" v-else>
+      <li v-for="item in sortedSaved" :key="item.id">
+        <time :datetime="item.date">{{ savedDateText(item.date) }}</time>
+        <strong>{{ item.name }}</strong>
+        <span>{{ item.location }}</span>
+        <button type="button" class="saved-remove" :aria-label="'Видалити «' + item.name + '» з обраного'"
+                @click="toggleSaved(item)">ВИДАЛИТИ</button>
+      </li>
+    </ul>
   </aside>
 </div>
 
