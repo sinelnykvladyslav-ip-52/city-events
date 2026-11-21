@@ -14,7 +14,6 @@
     --color-concert: #C2185B;
     --color-theatre: #3949AB;
     --color-standup: #B4530A;
-    --color-holiday: #00796B;
 
     --color-error: #B3261E;
     --color-error-soft: #FDECEA;
@@ -551,14 +550,12 @@ section h2::after {
 .category-concert { border-left-color: var(--color-concert); }
 .category-theatre { border-left-color: var(--color-theatre); }
 .category-standup { border-left-color: var(--color-standup); }
-.category-holiday { border-left-color: var(--color-holiday); }
 
 .category-concert .category { background-color: var(--color-concert); }
 .category-theatre .category { background-color: var(--color-theatre); }
 .category-standup .category { background-color: var(--color-standup); }
-.category-holiday .category { background-color: var(--color-holiday); }
 
-.holidays-bar {
+.events-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
