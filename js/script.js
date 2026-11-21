@@ -1,4 +1,4 @@
-const HOLIDAYS_API_URL = 'https://date.nager.at/api/v3/PublicHolidays/2026/UA';
+const EVENTS_API_URL = '/api/events';
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STORAGE_KEY = 'savedEvents';
 const MIGRATED_KEY = 'savedEventsMigrated';
@@ -10,16 +10,6 @@ const UPCOMING_LIMIT = 4;
 
 console.log('script.js підключено');
 
-const events = [
-  { id: 1, title: 'Berliner Döner', category: 'concert', date: '2026-10-09T19:00', place: 'POP UP', address: 'Київ, Кирилівська, 60', image: 'assets/img/a0e3.jpg_v35-banner' },
-  { id: 2, title: 'Імпровізаційний тур', category: 'standup', date: '2026-09-25T19:00', place: 'Київський культурний кластер "Краків"', address: 'Київ, вул. Русанівська Набережна, 12', image: 'assets/img/8a6d.jpg_v35-banner' },
-  { id: 3, title: 'Дуже сумна людина', category: 'theatre', date: '2026-10-02T18:30', place: 'Тернопільська обласна філармонія', address: 'Тернопіль, вул. Князя Острозького, 11', image: 'assets/img/9440.jpg_v35-banner' },
-  { id: 4, title: 'Симфонічний вечір музики Мирослава Скорика', category: 'concert', date: '2026-10-17T19:00', place: 'Національна філармонія України', address: 'Київ, Володимирський узвіз, 2' },
-  { id: 5, title: 'Лісова пісня', category: 'theatre', date: '2026-10-24T18:00', place: 'Театр імені Івана Франка', address: 'Київ, пл. Івана Франка, 3' },
-  { id: 6, title: 'Відкритий мікрофон для початківців', category: 'standup', date: '2026-10-30T20:00', place: 'Underground Stand Up Club', address: 'Київ, вул. Ярославська, 6' },
-  { id: 7, title: 'Джазовий квартет під відкритим небом', category: 'concert', date: '2026-11-07T17:00', place: 'Арт-простір «Платформа»', address: 'Київ, вул. Біломорська, 1' },
-];
-
 function classifyEvent(event) {
   if (event.category === 'concert') {
     return 'Концерт — жива музика';
@@ -27,47 +17,15 @@ function classifyEvent(event) {
     return 'Театр — вистава на сцені';
   } else if (event.category === 'standup') {
     return 'Стендап — гумористичний виступ';
-  } else if (event.category === 'holiday') {
-    return 'Свято — державне свято України';
   } else {
     return 'Інша подія';
   }
 }
 
-const shorten = (text, n) => (text.length > n ? text.slice(0, n) + '…' : text);
-
-function printEventsByCategory(list, category) {
-  console.log(`Події категорії «${category}»:`);
-  let count = 0;
-  for (const event of list) {
-    if (event.category === category) {
-      count++;
-      console.log(`  ${count}. ${shorten(event.title, 20)}`);
-    }
-  }
-  console.log(`Усього подій категорії «${category}»: ${count}`);
-  return count;
-}
-
-function printAllEvents(list) {
-  console.log(`Усього подій в афіші: ${list.length}`);
-  for (let i = 0; i < list.length; i++) {
-    console.log(`${i + 1}. ${list[i].title} — ${classifyEvent(list[i])}`);
-  }
-}
-
-printAllEvents(events);
-printEventsByCategory(events, 'concert');
-printEventsByCategory(events, 'theatre');
-
-console.log(shorten(events[3].title, 25));
-console.log(shorten(events[0].title, 25));
-
 const categoryLabels = {
   concert: 'Концерти',
   theatre: 'Театр',
   standup: 'Стендап',
-  holiday: 'Свято',
   saved: 'Обране',
 };
 
@@ -122,7 +80,7 @@ function eventLocation(event) {
   if (event.location) {
     return event.location;
   }
-  return event.category === 'holiday' ? 'Україна' : 'Місце уточнюється';
+  return 'Місце уточнюється';
 }
 
 function toSavedEvent(event) {
@@ -417,7 +375,9 @@ Vue.createApp({
     return {
       path: currentPath(),
       section: '',
-      events: events.map(event => ({ ...event })),
+      events: [],
+      eventsLoading: false,
+      eventsError: '',
       activeCategory: 'all',
       categoryFilters: [
         { value: 'all', label: 'УСІ КАТЕГОРІЇ' },
@@ -429,9 +389,6 @@ Vue.createApp({
       newCategory: '',
       newDate: '',
       titleError: '',
-      holidays: [],
-      holidaysLoading: false,
-      holidaysError: '',
       savedEvents: [],
       savedLoading: true,
       useLocalStorage: false,
@@ -461,7 +418,7 @@ Vue.createApp({
     },
     upcomingEvents() {
       const byId = new Map();
-      [...this.events, ...this.holidays].map(toSavedEvent).concat(this.savedEvents)
+      this.events.map(toSavedEvent).concat(this.savedEvents)
         .forEach(item => byId.set(item.id, item));
       return [...byId.values()]
         .map(item => ({ ...item, daysLeft: daysUntil(item.date) }))
@@ -474,7 +431,7 @@ Vue.createApp({
   methods: {
     eventHref,
     findEvent(id) {
-      const event = [...this.events, ...this.holidays].find(item => String(item.id) === id);
+      const event = this.events.find(item => String(item.id) === id);
       if (event) {
         return event;
       }
@@ -541,9 +498,9 @@ Vue.createApp({
       this.titleError = '';
       event.target.reset();
     },
-    async loadHolidays(url = HOLIDAYS_API_URL) {
-      this.holidaysLoading = true;
-      this.holidaysError = '';
+    async loadEvents(url = EVENTS_API_URL) {
+      this.eventsLoading = true;
+      this.eventsError = '';
       try {
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) {
@@ -552,22 +509,16 @@ Vue.createApp({
           throw error;
         }
         const data = await response.json();
-        console.log('Свята з API Nager.Date:', data);
-        this.holidays = data.map(holiday => ({
-          id: `${holiday.date}-${holiday.name}`,
-          title: holiday.localName,
-          category: 'holiday',
-          date: holiday.date,
-          note: holiday.name,
-        }));
+        console.log('Події з локального сервера:', data);
+        this.events = data;
       } catch (error) {
-        this.holidays = [];
-        this.holidaysError = error.status === 404
+        this.events = [];
+        this.eventsError = error.status === 404
           ? 'Дані про події не знайдено'
-          : 'Не вдалося завантажити свята. Перевірте з\'єднання й натисніть «Оновити».';
-        console.error('Помилка завантаження свят:', error);
+          : 'Не вдалося завантажити події. Перевірте, чи запущено сервер, і натисніть «Оновити».';
+        console.error('Помилка завантаження подій:', error);
       } finally {
-        this.holidaysLoading = false;
+        this.eventsLoading = false;
       }
     },
     async loadSaved() {
@@ -631,6 +582,6 @@ Vue.createApp({
     window.addEventListener('hashchange', this.renderRoute);
     document.addEventListener('click', this.onLinkClick);
     this.loadSaved();
-    this.loadHolidays();
+    this.loadEvents();
   },
 }).mount('#app');
