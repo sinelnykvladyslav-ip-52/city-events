@@ -1,0 +1,16 @@
+{
+  "name": "city-events-server",
+  "version": "1.0.0",
+  "description": "Локальний сервер афіші подій міста: статичні файли застосунку й API подій",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
