@@ -18,7 +18,6 @@
   <nav>
     <a href="#/" data-link>НАЙБЛИЖЧІ</a>
     <a href="#/" data-link data-section="events">ПОДІЇ</a>
-    <a href="#/" data-link data-section="holidays">СВЯТА</a>
     <a href="#/" data-link data-section="add-event">ДОДАТИ ПОДІЮ</a>
     <a href="#/saved" data-link>ОБРАНЕ</a>
   </nav>
@@ -74,27 +73,17 @@
 
     <p id="events-count">{{ app.countText }}</p>
 
-    <div class="cards" id="events-list">
+    <div class="events-bar">
+      <button type="button" class="btn-secondary" id="events-reload"
+              :disabled="app.eventsLoading" @click="app.loadEvents()">ОНОВИТИ</button>
+      <p class="loading" id="events-loading" v-if="app.eventsLoading">Завантаження подій…</p>
+    </div>
+    <p class="load-error" id="events-error" role="alert" v-if="app.eventsError">{{ app.eventsError }}</p>
+    <div class="cards" id="events-list" :aria-busy="app.eventsLoading">
       <event-card v-for="item in app.visibleEvents" :key="item.id" :id="item.id"
                   :title="item.title" :category="item.category" :date="item.date"
                   :image="item.image" :place="item.place" :address="item.address"
                   :saved="app.savedIds.has(item.id)" @toggle-save="app.toggleSaved(item)"></event-card>
-    </div>
-  </section>
-
-  <section id="holidays">
-    <h2>ДЕРЖАВНІ СВЯТА 2026</h2>
-    <div class="holidays-bar">
-      <button type="button" class="btn-secondary" id="holidays-reload"
-              :disabled="app.holidaysLoading" @click="app.loadHolidays()">ОНОВИТИ</button>
-      <p class="loading" id="holidays-loading" v-if="app.holidaysLoading">Завантаження свят…</p>
-    </div>
-    <p class="load-error" id="holidays-error" role="alert" v-if="app.holidaysError">{{ app.holidaysError }}</p>
-    <div class="cards" id="holidays-list" :aria-busy="app.holidaysLoading">
-      <event-card v-for="holiday in app.holidays" :key="holiday.id" :id="holiday.id"
-                  :title="holiday.title" :category="holiday.category" :date="holiday.date"
-                  :note="holiday.note"
-                  :saved="app.savedIds.has(holiday.id)" @toggle-save="app.toggleSaved(holiday)"></event-card>
     </div>
   </section>
 
@@ -129,7 +118,7 @@
 </template>
 
 <template id="event-view">
-  <p class="loading" v-if="!event && (app.holidaysLoading || app.savedLoading)">Завантаження події…</p>
+  <p class="loading" v-if="!event && (app.eventsLoading || app.savedLoading)">Завантаження події…</p>
   <section id="event-page" v-else-if="event">
     <a class="back-link" href="#/" data-link>← ДО АФІШІ</a>
     <h2>ДЕТАЛІ ПОДІЇ</h2>
