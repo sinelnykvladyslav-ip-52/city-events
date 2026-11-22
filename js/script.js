@@ -175,19 +175,19 @@ async function deleteItem(id) {
 }
 
 async function migrateFromLocalStorage() {
-  if (localStorage.getItem(MIGRATED_KEY) === 'true') {
-    return 0;
-  }
-  const oldItems = loadFromLocalStorage();
   const storedItems = await getAllItems();
   let moved = 0;
-  if (storedItems.length === 0 && oldItems.length > 0) {
-    for (const item of oldItems) {
-      await addItem(item);
+  if (localStorage.getItem(MIGRATED_KEY) !== 'true') {
+    const oldItems = loadFromLocalStorage();
+    if (storedItems.length === 0 && oldItems.length > 0) {
+      for (const item of oldItems) {
+        await addItem(item);
+      }
+      moved = oldItems.length;
     }
-    moved = oldItems.length;
+    localStorage.setItem(MIGRATED_KEY, 'true');
   }
-  localStorage.setItem(MIGRATED_KEY, 'true');
+  localStorage.removeItem(STORAGE_KEY);
   return moved;
 }
 
