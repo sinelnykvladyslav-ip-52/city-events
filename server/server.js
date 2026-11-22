@@ -2,7 +2,7 @@ const path = require('path');
 const express = require('express');
 const events = require('./events.json');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const CLIENT_DIR = path.join(__dirname, '..');
 
 const app = express();
